@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
-// Faculty Screens
+// Faculty Screen
 import 'screens/faculty/dashboard_faculty.dart';
 import 'screens/faculty/edit_timetable.dart';
 import 'screens/faculty/change_status.dart';
