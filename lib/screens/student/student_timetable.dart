@@ -1,170 +1,124 @@
 import 'package:flutter/material.dart';
+import '../common/campus_map_main.dart'; // ✅ use the new map file
 
-class StudentTimetableScreen extends StatefulWidget {
-  final Function(int)? onNavigateToTab; // callback to switch tab
-
-  const StudentTimetableScreen({Key? key, this.onNavigateToTab})
-      : super(key: key);
-
-  @override
-  State<StudentTimetableScreen> createState() => _StudentTimetableScreenState();
-}
-
-class _StudentTimetableScreenState extends State<StudentTimetableScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  // Student weekly timetable data
-  final Map<String, List<Map<String, String>>> studentSchedule = {
-    'Mon': [
-      {'time': '9:00 - 9:50', 'subject': 'DSA', 'room': '201'},
-      {'time': '10:00 - 10:50', 'subject': 'DBMS', 'room': '305'},
-      {'time': '11:00 - 11:50', 'subject': 'Math', 'room': '112'},
-    ],
-    'Tue': [
-      {'time': '9:00 - 9:50', 'subject': 'Physics', 'room': 'Lab B'},
-      {'time': '10:00 - 10:50', 'subject': 'DSA', 'room': '201'},
-      {'time': '1:00 - 1:50', 'subject': 'English', 'room': '101'},
-    ],
-    'Wed': [
-      {'time': '9:00 - 9:50', 'subject': 'Chemistry', 'room': 'Lab A'},
-      {'time': '10:00 - 10:50', 'subject': 'DBMS', 'room': '201'},
-    ],
-    'Thu': [
-      {'time': '9:00 - 9:50', 'subject': 'DBMS', 'room': '305'},
-      {'time': '10:00 - 10:50', 'subject': 'AI', 'room': '205'},
-    ],
-    'Fri': [
-      {'time': '9:00 - 9:50', 'subject': 'DSA Lab', 'room': 'C-Block'},
-      {'time': '10:00 - 10:50', 'subject': 'Physics', 'room': 'Lab B'},
-    ],
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 5, vsync: this);
-  }
+class StudentTimetableScreen extends StatelessWidget {
+  const StudentTimetableScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final days = studentSchedule.keys.toList();
-
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          'My Timetable',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w700,
+    return DefaultTabController(
+      length: 5, // Monday–Friday
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('My Timetable'),
+          bottom: const TabBar(
+            isScrollable: true,
+            tabs: [
+              Tab(text: 'Mon'),
+              Tab(text: 'Tue'),
+              Tab(text: 'Wed'),
+              Tab(text: 'Thu'),
+              Tab(text: 'Fri'),
+            ],
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.purple.shade700,
-          unselectedLabelColor: Colors.grey[600],
-          indicatorColor: Colors.purple.shade700,
-          indicatorWeight: 3,
-          tabs: days.map((day) => Tab(text: day)).toList(),
+        body: TabBarView(
+          children: [
+            _buildDay(context, 'Monday', [
+              {'time': '9:00 - 9:50', 'subject': 'DSA', 'room': 'S101'},
+              {'time': '10:00 - 10:50', 'subject': 'DBMS', 'room': 'S102'},
+              {'time': '11:00 - 11:50', 'subject': 'Maths', 'room': 'S103'},
+            ]),
+            _buildDay(context, 'Tuesday', [
+              {'time': '9:00 - 9:50', 'subject': 'Physics', 'room': 'S104'},
+              {'time': '10:00 - 10:50', 'subject': 'English', 'room': 'S105'},
+              {'time': '1:00 - 1:50', 'subject': 'AI', 'room': 'S106'},
+            ]),
+            _buildDay(context, 'Wednesday', [
+              {'time': '9:00 - 9:50', 'subject': 'DBMS', 'room': 'S101'},
+              {'time': '10:00 - 10:50', 'subject': 'AI', 'room': 'S103'},
+            ]),
+            _buildDay(context, 'Thursday', [
+              {'time': '9:00 - 9:50', 'subject': 'DSA', 'room': 'S105'},
+              {'time': '10:00 - 10:50', 'subject': 'DBMS', 'room': 'S102'},
+            ]),
+            _buildDay(context, 'Friday', [
+              {'time': '9:00 - 9:50', 'subject': 'DSA Lab', 'room': 'S106'},
+              {'time': '10:00 - 10:50', 'subject': 'Physics', 'room': 'S104'},
+            ]),
+          ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: days.map((day) {
-          final classes = studentSchedule[day] ?? [];
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                _getFullDayName(day),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...classes.map((entry) {
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.access_time,
-                          color: Colors.purple.shade700, size: 22),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '${entry['time']}  •  ${entry['subject']} (${entry['room']})',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      // 🗺️ Map icon on right side
-                      InkWell(
-                        onTap: () {
-                          // instead of opening new page, switch to map tab (index 0)
-                          widget.onNavigateToTab?.call(0);
-                        },
-                        child: Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.purple.shade700,
-                          size: 26,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              if (classes.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 40),
-                  child: Center(
-                    child: Text(
-                      'No classes today 🎉',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        }).toList(),
       ),
     );
   }
 
-  String _getFullDayName(String shortDay) {
-    switch (shortDay) {
-      case 'Mon':
-        return 'Monday';
-      case 'Tue':
-        return 'Tuesday';
-      case 'Wed':
-        return 'Wednesday';
-      case 'Thu':
-        return 'Thursday';
-      case 'Fri':
-        return 'Friday';
-      default:
-        return '';
-    }
+  Widget _buildDay(BuildContext context, String day, List<Map<String, String>> classes) {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        Text(
+          day,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...classes.map(
+          (entry) => Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 3,
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            child: ListTile(
+              leading: const Icon(Icons.schedule, color: Colors.blue),
+              title: Text(
+                '${entry['time']} • ${entry['subject']}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text('Room: ${entry['room']}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.location_on, color: Colors.blue),
+                onPressed: () async {
+                  // 🧭 Ask the user for their current location
+                  String? selectedLocation = await showDialog<String>(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text("Select your current location"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (var room in ['S101', 'S102', 'S103', 'S104', 'S105', 'S106'])
+                              ListTile(
+                                title: Text(room),
+                                onTap: () => Navigator.pop(context, room),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+
+                  // ✅ If chosen, open the map
+                  if (selectedLocation != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CampusMapMainScreen(
+                          startRoom: selectedLocation,
+                          destinationRoom: entry['room']!,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

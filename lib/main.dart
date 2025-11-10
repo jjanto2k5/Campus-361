@@ -13,6 +13,8 @@ import 'screens/student/student_timetable.dart';
 
 // Common Screens
 import 'screens/common/sos.dart';
+import 'screens/common/campus_map_main.dart'; // ✅ the polished version
+import 'screens/common/campus_map.dart'; // optional older version if still used
 
 // Welcome Flow
 import 'screens/welcome_screen.dart';
@@ -40,14 +42,15 @@ class CampusApp extends StatelessWidget {
           bodyMedium: TextStyle(color: Color(0xFF111418)),
         ),
       ),
-      home: const WelcomeScreen(), // 👈 Start at Welcome page
+      home: const WelcomeScreen(), // ✅ always start from Welcome page
     );
   }
 }
 
-/// MainScreen with role-based navigation (student / faculty)
+/// Role-based Main Screen (Student / Faculty)
 class MainScreen extends StatefulWidget {
-  final String role; // 👈 Either "student" or "faculty"
+  final String role; // 👈 "student" or "faculty"
+
   const MainScreen({super.key, required this.role});
 
   @override
@@ -56,33 +59,30 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 1;
-
-  // ✅ Define userRole inside the class
   late String userRole;
-
   late List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
-
-    // Set userRole based on the widget’s role
     userRole = widget.role;
 
+    // Define tabs for both roles
     _widgetOptions = [
-      const Center(child: Text('🗺️ Campus Map Coming Soon')),
+      // 🗺️ Map
+      const MapTab(),
 
-      // 🏠 Home based on role
-      widget.role == 'faculty'
+      // 🏠 Home
+      userRole == 'faculty'
           ? const DashboardFacultyScreen()
           : const StudentDashboardScreen(),
 
-      // 📅 Timetable based on role
-      widget.role == 'faculty'
-          ? TimetableScreen(onNavigateToTab: (index) => _onItemTapped(index))
-          : StudentTimetableScreen(onNavigateToTab: (index) => _onItemTapped(index)),
+      // 📅 Timetable
+      userRole == 'faculty'
+          ? TimetableScreen()
+          : const StudentTimetableScreen(),
 
-      // 🚨 SOS Screen — passes correct role
+      // 🚨 SOS
       SOSScreen(role: userRole),
     ];
   }
@@ -126,6 +126,117 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 🗺️ Separate Map Tab Widget for cleaner structure
+class MapTab extends StatefulWidget {
+  const MapTab({super.key});
+
+  @override
+  State<MapTab> createState() => _MapTabState();
+}
+
+class _MapTabState extends State<MapTab> {
+  String? selectedStart;
+  String? selectedDestination;
+
+  void _openMap() {
+    if (selectedStart != null && selectedDestination != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CampusMapMainScreen(
+            startRoom: selectedStart!,
+            destinationRoom: selectedDestination!,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select both locations')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Campus Map"),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Find Path Between Rooms",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+
+            // From Dropdown
+            DropdownButtonFormField<String>(
+              value: selectedStart,
+              decoration: _dropdownDecoration("From (Your Location)"),
+              items: ['S101', 'S102', 'S103', 'S104', 'S105', 'S106']
+                  .map((room) => DropdownMenuItem(
+                        value: room,
+                        child: Text(room),
+                      ))
+                  .toList(),
+              onChanged: (val) => setState(() => selectedStart = val),
+            ),
+            const SizedBox(height: 16),
+
+            // To Dropdown
+            DropdownButtonFormField<String>(
+              value: selectedDestination,
+              decoration: _dropdownDecoration("To (Destination)"),
+              items: ['S101', 'S102', 'S103', 'S104', 'S105', 'S106']
+                  .map((room) => DropdownMenuItem(
+                        value: room,
+                        child: Text(room),
+                      ))
+                  .toList(),
+              onChanged: (val) => setState(() => selectedDestination = val),
+            ),
+            const SizedBox(height: 24),
+
+            // Show Path Button
+            ElevatedButton.icon(
+              onPressed: _openMap,
+              icon: const Icon(Icons.navigation_outlined, color: Colors.white),
+              label: const Text(
+                "Show Path",
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1173D4),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _dropdownDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      filled: true,
+      fillColor: Colors.grey.shade100,
     );
   }
 }

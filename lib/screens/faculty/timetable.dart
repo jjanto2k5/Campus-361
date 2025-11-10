@@ -1,167 +1,121 @@
 import 'package:flutter/material.dart';
+import '../common/campus_map_main.dart'; // ✅ use the main map file
 
-class TimetableScreen extends StatefulWidget {
-  final Function(int)? onNavigateToTab; // callback to switch navbar tab
-
-  const TimetableScreen({Key? key, this.onNavigateToTab}) : super(key: key);
-
-  @override
-  State<TimetableScreen> createState() => _TimetableScreenState();
-}
-
-class _TimetableScreenState extends State<TimetableScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  // Faculty's weekly schedule (day-wise)
-  final Map<String, List<Map<String, String>>> facultySchedule = {
-    'Mon': [
-      {'time': '9:00 - 9:50', 'batch': 'CSE-A', 'room': 'S102'},
-      {'time': '11:00 - 11:50', 'batch': 'CSE-B', 'room': 'S105'},
-      {'time': '2:00 - 2:50', 'batch': 'CSE-C', 'room': 'Lab-1'},
-    ],
-    'Tue': [
-      {'time': '8:00 - 8:50', 'batch': 'CSE-A', 'room': 'S202'},
-      {'time': '10:00 - 10:50', 'batch': 'CSE-D', 'room': 'Lab-3'},
-    ],
-    'Wed': [
-      {'time': '9:00 - 9:50', 'batch': 'CSE-B', 'room': 'S105'},
-      {'time': '11:00 - 11:50', 'batch': 'CSE-A', 'room': 'S102'},
-    ],
-    'Thu': [
-      {'time': '10:00 - 10:50', 'batch': 'CSE-C', 'room': 'S110'},
-      {'time': '2:00 - 2:50', 'batch': 'CSE-A', 'room': 'Lab-1'},
-    ],
-    'Fri': [
-      {'time': '9:00 - 9:50', 'batch': 'CSE-D', 'room': 'S202'},
-      {'time': '11:00 - 11:50', 'batch': 'CSE-B', 'room': 'S105'},
-    ],
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 5, vsync: this);
-  }
+class TimetableScreen extends StatelessWidget {
+  const TimetableScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final days = facultySchedule.keys.toList();
-
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          'My Timetable',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w700,
+    return DefaultTabController(
+      length: 5,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Faculty Timetable'),
+          bottom: const TabBar(
+            isScrollable: true,
+            tabs: [
+              Tab(text: 'Mon'),
+              Tab(text: 'Tue'),
+              Tab(text: 'Wed'),
+              Tab(text: 'Thu'),
+              Tab(text: 'Fri'),
+            ],
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.blue.shade700,
-          unselectedLabelColor: Colors.grey[600],
-          indicatorColor: Colors.blue.shade700,
-          indicatorWeight: 3,
-          tabs: days.map((day) => Tab(text: day)).toList(),
+        body: TabBarView(
+          children: [
+            _buildDay(context, 'Monday', [
+              {'time': '9:00 - 9:50', 'subject': 'CSE-A', 'room': 'S103'},
+              {'time': '10:00 - 10:50', 'subject': 'CSE-B', 'room': 'S104'},
+            ]),
+            _buildDay(context, 'Tuesday', [
+              {'time': '9:00 - 9:50', 'subject': 'ECE-A', 'room': 'S101'},
+              {'time': '10:00 - 10:50', 'subject': 'ECE-B', 'room': 'S106'},
+            ]),
+            _buildDay(context, 'Wednesday', [
+              {'time': '9:00 - 9:50', 'subject': 'CSE-A', 'room': 'S105'},
+              {'time': '10:00 - 10:50', 'subject': 'CSE-C', 'room': 'S102'},
+            ]),
+            _buildDay(context, 'Thursday', [
+              {'time': '9:00 - 9:50', 'subject': 'CSE-D', 'room': 'S106'},
+            ]),
+            _buildDay(context, 'Friday', [
+              {'time': '9:00 - 9:50', 'subject': 'CSE-A', 'room': 'S103'},
+              {'time': '9:00 - 9:50', 'subject': 'CSE-B', 'room': 'S105'},
+            ]),
+          ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: days.map((day) {
-          final sessions = facultySchedule[day] ?? [];
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                _getFullDayName(day),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...sessions.map((session) {
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.access_time,
-                          color: Colors.blue.shade700, size: 22),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '${session['time']}  •  ${session['batch']} (${session['room']})',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      // 🗺️ Map icon → go to Map tab
-                      InkWell(
-                        onTap: () {
-                          widget.onNavigateToTab?.call(0); // switch to Map tab
-                        },
-                        child: Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.blue.shade700,
-                          size: 26,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              if (sessions.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 40),
-                  child: Center(
-                    child: Text(
-                      'No classes today 🎉',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        }).toList(),
       ),
     );
   }
 
-  String _getFullDayName(String shortDay) {
-    switch (shortDay) {
-      case 'Mon':
-        return 'Monday';
-      case 'Tue':
-        return 'Tuesday';
-      case 'Wed':
-        return 'Wednesday';
-      case 'Thu':
-        return 'Thursday';
-      case 'Fri':
-        return 'Friday';
-      default:
-        return '';
-    }
+  Widget _buildDay(BuildContext context, String day, List<Map<String, String>> classes) {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        Text(
+          day,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...classes.map(
+          (entry) => Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 3,
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            child: ListTile(
+              leading: const Icon(Icons.schedule, color: Colors.blue),
+              title: Text(
+                '${entry['time']} • ${entry['subject']}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text('Room: ${entry['room']}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.location_on, color: Colors.blue),
+                onPressed: () async {
+                  // 🧭 Ask for faculty’s current location
+                  String? selectedLocation = await showDialog<String>(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text("Select your current location"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (var room in ['S101', 'S102', 'S103', 'S104', 'S105', 'S106'])
+                              ListTile(
+                                title: Text(room),
+                                onTap: () => Navigator.pop(context, room),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+
+                  // ✅ If selected, show path
+                  if (selectedLocation != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CampusMapMainScreen(
+                          startRoom: selectedLocation,
+                          destinationRoom: entry['room']!,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
