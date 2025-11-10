@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
+import 'student_timetable.dart'; // ✅ Import timetable screen
 
-class DashboardStudentScreen extends StatelessWidget {
-  const DashboardStudentScreen({Key? key}) : super(key: key);
+class StudentDashboardScreen extends StatelessWidget {
+  const StudentDashboardScreen({Key? key}) : super(key: key);
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1173D4),
+        title: const Text(
+          'Student Dashboard',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 2,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -18,14 +32,14 @@ class DashboardStudentScreen extends StatelessWidget {
               // Header
               Row(
                 children: [
-                  const Icon(Icons.school_rounded, color: Colors.blue, size: 30),
+                  const Icon(Icons.school_rounded, color: Color(0xFF1173D4), size: 30),
                   const SizedBox(width: 8),
-                  Text(
+                  const Text(
                     'Campus361',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[800],
+                      color: Color(0xFF1173D4),
                     ),
                   ),
                 ],
@@ -50,6 +64,24 @@ class DashboardStudentScreen extends StatelessWidget {
                   mainAxisSpacing: 16,
                   childAspectRatio: 1.1,
                   children: [
+                    // 🕓 My Timetable
+                    _buildDashboardTile(
+                      context,
+                      icon: Icons.access_time,
+                      title: 'My Timetable',
+                      color: Colors.blue.shade100,
+                      iconColor: Colors.blue.shade700,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StudentTimetableScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // 👨‍🏫 Faculty Timetable
                     _buildDashboardTile(
                       context,
                       icon: Icons.people_outline,
@@ -59,11 +91,14 @@ class DashboardStudentScreen extends StatelessWidget {
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Faculty timetable screen coming soon!'),
+                            content: Text('Faculty timetable feature coming soon!'),
+                            backgroundColor: Colors.orange,
                           ),
                         );
                       },
                     ),
+
+                    // 🎓 Batch Timetable
                     _buildDashboardTile(
                       context,
                       icon: Icons.school_outlined,
@@ -73,7 +108,25 @@ class DashboardStudentScreen extends StatelessWidget {
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Batch timetable screen coming soon!'),
+                            content: Text('Batch timetable feature coming soon!'),
+                            backgroundColor: Colors.purple,
+                          ),
+                        );
+                      },
+                    ),
+
+                    // ⚙️ Settings
+                    _buildDashboardTile(
+                      context,
+                      icon: Icons.settings,
+                      title: 'Settings',
+                      color: Colors.green.shade100,
+                      iconColor: Colors.green.shade700,
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Settings page coming soon!'),
+                            backgroundColor: Colors.green,
                           ),
                         );
                       },
@@ -102,7 +155,7 @@ class DashboardStudentScreen extends StatelessWidget {
     );
   }
 
-  // --- Dashboard tile builder ---
+  // --- Dashboard Tile Widget ---
   Widget _buildDashboardTile(
     BuildContext context, {
     required IconData icon,
@@ -129,7 +182,7 @@ class DashboardStudentScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor, size: 36),
+            Icon(icon, color: iconColor, size: 40),
             const SizedBox(height: 10),
             Text(
               title,
