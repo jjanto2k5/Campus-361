@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../main.dart'; // To access userRole if needed
 
 class SOSScreen extends StatelessWidget {
-  const SOSScreen({Key? key}) : super(key: key);
+  final String role; // ✅ added role parameter
+
+  const SOSScreen({Key? key, required this.role}) : super(key: key);
 
   void _showSOSDialog(BuildContext context, String type) {
     showDialog(
@@ -45,10 +46,13 @@ class SOSScreen extends StatelessWidget {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(
-          userRole == 'faculty'
+          role == 'faculty'
               ? 'Faculty Emergency Assistance'
               : 'Student Emergency Assistance',
-          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 1,

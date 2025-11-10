@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
-// Faculty Screen
+// Faculty Screens
 import 'screens/faculty/dashboard_faculty.dart';
 import 'screens/faculty/edit_timetable.dart';
 import 'screens/faculty/change_status.dart';
@@ -11,47 +11,44 @@ import 'screens/faculty/timetable.dart';
 import 'screens/student/student_dashboard.dart';
 import 'screens/student/student_timetable.dart';
 
-//sos
+// Common Screens
 import 'screens/common/sos.dart';
 
+// Welcome Flow
+import 'screens/welcome_screen.dart';
 
 void main() {
-  runApp(const CampusNavigatorApp());
+  runApp(const CampusApp());
 }
-const String userRole = 'student';
 
-class CampusNavigatorApp extends StatelessWidget {
-  const CampusNavigatorApp({Key? key}) : super(key: key);
+/// Root App
+class CampusApp extends StatelessWidget {
+  const CampusApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Campus Navigator',
+      debugShowCheckedModeBanner: false,
+      title: "Campus 361",
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Inter',
-        scaffoldBackgroundColor: Colors.grey[100],
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Inter',
-          ),
-          iconTheme: IconThemeData(color: Colors.black),
+        fontFamily: "Inter",
+        scaffoldBackgroundColor: const Color(0xFFF6F7F8),
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF1173D4),
+        ),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Color(0xFF111418)),
         ),
       ),
-      home: const MainScreen(),
-      debugShowCheckedModeBanner: false,
+      home: const WelcomeScreen(), // 👈 Start at Welcome page
     );
   }
 }
 
+/// MainScreen with role-based navigation (student / faculty)
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  final String role; // 👈 Either "student" or "faculty"
+  const MainScreen({super.key, required this.role});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -60,38 +57,38 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 1;
 
-  late List<Widget> _widgetOptions; // make it dynamic
+  // ✅ Define userRole inside the class
+  late String userRole;
+
+  late List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
 
-    // Define all screens dynamically (so _onItemTapped can be used)
+    // Set userRole based on the widget’s role
+    userRole = widget.role;
+
     _widgetOptions = [
-      const Center(child: Text('Map Screen')),
+      const Center(child: Text('🗺️ Campus Map Coming Soon')),
 
-      // Home screen (changes based on user role)
-      userRole == 'faculty'
+      // 🏠 Home based on role
+      widget.role == 'faculty'
           ? const DashboardFacultyScreen()
-          : const DashboardStudentScreen(),
+          : const StudentDashboardScreen(),
 
-      // Timetable (faculty/student difference handled here)
-      userRole == 'faculty'
-          ? TimetableScreen(onNavigateToTab: (index) {
-              _onItemTapped(index); // ✅ Works now
-            })
-          : StudentTimetableScreen(onNavigateToTab: (index) {
-              _onItemTapped(index); // ✅ Works here too
-            }),
+      // 📅 Timetable based on role
+      widget.role == 'faculty'
+          ? TimetableScreen(onNavigateToTab: (index) => _onItemTapped(index))
+          : StudentTimetableScreen(onNavigateToTab: (index) => _onItemTapped(index)),
 
-      const SOSScreen(),
+      // 🚨 SOS Screen — passes correct role
+      SOSScreen(role: userRole),
     ];
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   @override
@@ -116,7 +113,7 @@ class _MainScreenState extends State<MainScreen> {
             color: Colors.grey[600],
             activeColor: Colors.white,
             iconSize: 26,
-            tabBackgroundColor: Colors.blue.shade600,
+            tabBackgroundColor: const Color(0xFF1173D4),
             padding: const EdgeInsets.all(14),
             selectedIndex: _selectedIndex,
             onTabChange: _onItemTapped,
@@ -132,4 +129,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-
