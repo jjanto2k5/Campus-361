@@ -1,135 +1,179 @@
 import 'package:flutter/material.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
+import '../main.dart'; // ✅ Import MainScreen for nav after signup
 
-// Faculty Screens
-import 'screens/faculty/dashboard_faculty.dart';
-import 'screens/faculty/edit_timetable.dart';
-import 'screens/faculty/change_status.dart';
-import 'screens/faculty/timetable.dart';
-
-// Student Screens
-import 'screens/student/student_dashboard.dart';
-import 'screens/student/student_timetable.dart';
-
-//sos
-import 'screens/common/sos.dart';
-
-
-void main() {
-  runApp(const CampusNavigatorApp());
-}
-const String userRole = 'student';
-
-class CampusNavigatorApp extends StatelessWidget {
-  const CampusNavigatorApp({Key? key}) : super(key: key);
+class StudentSignUpScreen extends StatefulWidget {
+  const StudentSignUpScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Campus Navigator',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Inter',
-        scaffoldBackgroundColor: Colors.grey[100],
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Inter',
-          ),
-          iconTheme: IconThemeData(color: Colors.black),
-        ),
-      ),
-      home: const MainScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  State<StudentSignUpScreen> createState() => _StudentSignUpScreenState();
 }
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 1;
-
-  late List<Widget> _widgetOptions; // make it dynamic
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Define all screens dynamically (so _onItemTapped can be used)
-    _widgetOptions = [
-      const Center(child: Text('Map Screen')),
-
-      // Home screen (changes based on user role)
-      userRole == 'faculty'
-          ? const DashboardFacultyScreen()
-          : const DashboardStudentScreen(),
-
-      // Timetable (faculty/student difference handled here)
-      userRole == 'faculty'
-          ? TimetableScreen(onNavigateToTab: (index) {
-              _onItemTapped(index); // ✅ Works now
-            })
-          : StudentTimetableScreen(onNavigateToTab: (index) {
-              _onItemTapped(index); // ✅ Works here too
-            }),
-
-      const SOSScreen(),
-    ];
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _widgetOptions[_selectedIndex],
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 8,
-                color: Colors.grey.withOpacity(0.2),
-                offset: const Offset(0, -1),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // 🔹 Top Image
+            SizedBox(
+              height: 250,
+              width: double.infinity,
+              child: Image.network(
+                "https://lh3.googleusercontent.com/aida-public/AB6AXuB-7UIWcImXh-4VEHTrpiFM2e1TPI8pudAoiZGcJTyAAuRnr4a3WzO-bXe8EvskNqDknIQ0EmRE8cbz99EPmGOds3henspBmX_RHip0Rr1yGfWiFPQTJxhsmFCewh7nQ1A7cYlzfHVw9rOnCunlXzGG5gjodeiUNqR4PG0PBOLgRcdvRpccojL7OUnEwbkQLU5mN6mCGw8P-p-msAiTKhvWqxHGt9hyz-r0tyVSpSzShc9ZOEDzsGVPqkYzUYGKmd6fWQVyiv47O2Xh",
+                fit: BoxFit.cover,
               ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          child: GNav(
-            gap: 8,
-            color: Colors.grey[600],
-            activeColor: Colors.white,
-            iconSize: 26,
-            tabBackgroundColor: Colors.blue.shade600,
-            padding: const EdgeInsets.all(14),
-            selectedIndex: _selectedIndex,
-            onTabChange: _onItemTapped,
-            tabs: const [
-              GButton(icon: Icons.map_outlined, text: 'Map'),
-              GButton(icon: Icons.home_filled, text: 'Home'),
-              GButton(icon: Icons.calendar_today, text: 'Timetable'),
-              GButton(icon: Icons.sos_outlined, text: 'SOS'),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // 🔹 Form Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Student Sign Up",
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Create your student account to access your campus features.",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF617589),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Username
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration:
+                          _inputDecoration("Username", Icons.person_outline),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please enter your username";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration:
+                          _inputDecoration("Email ID", Icons.email_outlined),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please enter your email";
+                        }
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                          return "Enter a valid email";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration:
+                          _inputDecoration("Password", Icons.lock_outline),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please enter your password";
+                        }
+                        if (value.length < 6) {
+                          return "Password must be at least 6 characters";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 28),
+
+                    // 🔹 Register Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Student Registered Successfully!"),
+                                backgroundColor: Color(0xFF1173D4),
+                              ),
+                            );
+
+                            // ✅ Navigate to main screen with student role
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const MainScreen(role: 'student'),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1173D4),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          "Register",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
+  // 🔸 Custom input field style
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF1173D4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF1173D4), width: 2),
+      ),
+    );
+  }
+}
