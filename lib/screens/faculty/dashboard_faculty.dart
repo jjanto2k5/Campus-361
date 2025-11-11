@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../common/facilty_directory.dart';
 import 'change_status.dart';
 import 'edit_timetable.dart';
+import '../common/batch_schedule.dart';
+
 
 class DashboardFacultyScreen extends StatelessWidget {
   const DashboardFacultyScreen({Key? key}) : super(key: key);
@@ -43,7 +46,7 @@ class DashboardFacultyScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // Dashboard Grid (fills available space)
+              // Dashboard Grid
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
@@ -60,7 +63,9 @@ class DashboardFacultyScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const EditTimetableScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const EditTimetableScreen(),
+                          ),
                         );
                       },
                     ),
@@ -73,7 +78,9 @@ class DashboardFacultyScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder:(context) => const ChangeStatusScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const ChangeStatusScreen(),
+                          ),
                         );
                       },
                     ),
@@ -83,8 +90,14 @@ class DashboardFacultyScreen extends StatelessWidget {
                       title: 'Faculty Timetable',
                       color: Colors.orange.shade100,
                       iconColor: Colors.orange.shade700,
-                     
-                      
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const FacultyDirectoryScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildDashboardTile(
                       context,
@@ -92,13 +105,20 @@ class DashboardFacultyScreen extends StatelessWidget {
                       title: 'Batch Timetable',
                       color: Colors.purple.shade100,
                       iconColor: Colors.purple.shade700,
-                      
+                      onTap: (){
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SchedulePage(),
+                          ),
+                        );
+                      }
                     ),
                   ],
                 ),
               ),
 
-              // Footer (Campus361 © 2025)
+              // Footer
               Center(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 10.0, bottom: 5.0),
@@ -127,11 +147,12 @@ class DashboardFacultyScreen extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: onTap??() {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$title clicked')),
-        );
-      },
+      onTap: onTap ??
+          () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$title clicked')),
+            );
+          },
       child: Container(
         decoration: BoxDecoration(
           color: color,
@@ -165,5 +186,3 @@ class DashboardFacultyScreen extends StatelessWidget {
     );
   }
 }
-
-

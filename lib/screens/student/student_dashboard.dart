@@ -1,4 +1,6 @@
+import 'package:campusapp/screens/common/facilty_directory.dart';
 import 'package:flutter/material.dart';
+import '../common/batch_schedule.dart';
 import 'student_timetable.dart'; // ✅ Import timetable screen
 
 class StudentDashboardScreen extends StatelessWidget {
@@ -89,11 +91,9 @@ class StudentDashboardScreen extends StatelessWidget {
                       color: Colors.orange.shade100,
                       iconColor: Colors.orange.shade700,
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Faculty timetable feature coming soon!'),
-                            backgroundColor: Colors.orange,
-                          ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const FacultyDirectoryScreen()),
                         );
                       },
                     ),
@@ -106,13 +106,12 @@ class StudentDashboardScreen extends StatelessWidget {
                       color: Colors.purple.shade100,
                       iconColor: Colors.purple.shade700,
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Batch timetable feature coming soon!'),
-                            backgroundColor: Colors.purple,
-                          ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SchedulePage()),
                         );
                       },
+
                     ),
 
                     // ⚙️ Settings
