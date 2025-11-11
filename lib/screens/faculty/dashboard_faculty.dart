@@ -1,6 +1,9 @@
+// lib/screens/faculty/dashboard_faculty.dart
 import 'package:flutter/material.dart';
 import 'change_status.dart';
 import 'edit_timetable.dart';
+import 'faculty_search.dart';
+import 'batch_search.dart';
 
 class DashboardFacultyScreen extends StatelessWidget {
   const DashboardFacultyScreen({Key? key}) : super(key: key);
@@ -58,10 +61,7 @@ class DashboardFacultyScreen extends StatelessWidget {
                       color: Colors.blue.shade100,
                       iconColor: Colors.blue.shade700,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const EditTimetableScreen()),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (c) => const EditTimetableScreen()));
                       },
                     ),
                     _buildDashboardTile(
@@ -71,10 +71,7 @@ class DashboardFacultyScreen extends StatelessWidget {
                       color: Colors.green.shade100,
                       iconColor: Colors.green.shade700,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder:(context) => const ChangeStatusScreen()),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (c) => const ChangeStatusScreen()));
                       },
                     ),
                     _buildDashboardTile(
@@ -83,8 +80,9 @@ class DashboardFacultyScreen extends StatelessWidget {
                       title: 'Faculty Timetable',
                       color: Colors.orange.shade100,
                       iconColor: Colors.orange.shade700,
-                     
-                      
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (c) => const FacultySearchPage()));
+                      },
                     ),
                     _buildDashboardTile(
                       context,
@@ -92,7 +90,9 @@ class DashboardFacultyScreen extends StatelessWidget {
                       title: 'Batch Timetable',
                       color: Colors.purple.shade100,
                       iconColor: Colors.purple.shade700,
-                      
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (c) => const BatchSearchPage()));
+                      },
                     ),
                   ],
                 ),
@@ -165,5 +165,3 @@ class DashboardFacultyScreen extends StatelessWidget {
     );
   }
 }
-
-

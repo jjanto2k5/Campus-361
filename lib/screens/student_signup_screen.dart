@@ -1,5 +1,7 @@
+// lib/screens/student_signup.dart
 import 'package:flutter/material.dart';
-import '../main.dart'; // ✅ for MainScreen navigation
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../main.dart'; // for MainScreen navigation
 
 class StudentSignUpScreen extends StatefulWidget {
   const StudentSignUpScreen({super.key});
@@ -13,6 +15,96 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  bool _loading = false;
+
+  Future<void> _registerStudent() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+
+    final name = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    final usersRef = FirebaseFirestore.instance.collection('users'); // change to 'students' if you prefer separate collection
+
+    try {
+      // Check duplicate email
+      final existing = await usersRef.where('email', isEqualTo: email).limit(1).get();
+      if (existing.docs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An account with this email already exists')),
+        );
+        setState(() => _loading = false);
+        return;
+      }
+
+      // Document data
+      final data = {
+        'name': name,
+        'email': email,
+        'password': password, // demo only - DON'T store plaintext in prod
+        'role': 'student',
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      // Write to Firestore
+      final docRef = await usersRef.add(data);
+      debugPrint('Student document created: ${docRef.id}');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Student Registered Successfully!')),
+      );
+
+      // Navigate to MainScreen as student
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen(role: 'student')),
+      );
+    } on FirebaseException catch (fe) {
+      debugPrint('FirebaseException during signup: ${fe.code} - ${fe.message}');
+      final msg = fe.code == 'permission-denied'
+          ? 'Firestore permission denied. Check your Firestore rules.'
+          : 'Signup failed: ${fe.message ?? fe.code}';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e, st) {
+      debugPrint('Unexpected error during signup: $e\n$st');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Signup failed: $e')),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF1173D4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF1173D4), width: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +121,6 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Form(
@@ -90,24 +181,7 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Student Registered Successfully!"),
-                                backgroundColor: Color(0xFF1173D4),
-                              ),
-                            );
-
-                            // 🧭 Navigate to MainScreen (Student Dashboard)
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MainScreen(role: 'student'),
-                              ),
-                            );
-                          }
-                        },
+                        onPressed: _loading ? null : _registerStudent,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1173D4),
                           foregroundColor: Colors.white,
@@ -115,10 +189,12 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          "Register",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        child: _loading
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator())
+                            : const Text(
+                                "Register",
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -128,22 +204,6 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF1173D4)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF1173D4), width: 2),
       ),
     );
   }

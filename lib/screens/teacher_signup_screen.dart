@@ -1,166 +1,143 @@
+// lib/screens/faculty_signup.dart
 import 'package:flutter/material.dart';
-import '../../main.dart'; // ✅ To navigate to MainScreen
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../main.dart'; // for MainScreen navigation
 
-class TeacherSignUpScreen extends StatefulWidget {
-  const TeacherSignUpScreen({super.key});
+class FacultySignUpScreen extends StatefulWidget {
+  const FacultySignUpScreen({super.key});
 
   @override
-  State<TeacherSignUpScreen> createState() => _TeacherSignUpScreenState();
+  State<FacultySignUpScreen> createState() => _FacultySignUpScreenState();
 }
 
-class _TeacherSignUpScreenState extends State<TeacherSignUpScreen> {
+class _FacultySignUpScreenState extends State<FacultySignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _nameCtl = TextEditingController();
+  final _emailCtl = TextEditingController();
+  final _deptCtl = TextEditingController();
+  final _passwordCtl = TextEditingController();
+  bool _loading = false;
+
+  Future<void> _signupFaculty() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+
+    final users = FirebaseFirestore.instance.collection('users'); // use 'faculty' if you want a separate collection
+
+    try {
+      final email = _emailCtl.text.trim();
+      // check duplicate email
+      final existing = await users.where('email', isEqualTo: email).limit(1).get();
+      if (existing.docs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An account with that email already exists.')),
+        );
+        setState(() => _loading = false);
+        return;
+      }
+
+      final doc = {
+        'name': _nameCtl.text.trim(),
+        'email': email,
+        'department': _deptCtl.text.trim(),
+        'password': _passwordCtl.text, // demo only - don't store plaintext in prod
+        'role': 'faculty',
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      final docRef = await users.add(doc);
+      debugPrint('Faculty added with id: ${docRef.id}');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Faculty registered successfully')),
+      );
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen(role: 'faculty')),
+      );
+    } on FirebaseException catch (fe) {
+      debugPrint('FirebaseException during faculty signup: ${fe.code} - ${fe.message}');
+      final msg = fe.code == 'permission-denied'
+          ? 'Firestore permission denied. Check your Firestore rules.'
+          : 'Signup failed: ${fe.message ?? fe.code}';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (e, st) {
+      debugPrint('Unexpected error during signup: $e\n$st');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Signup failed: $e')),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtl.dispose();
+    _emailCtl.dispose();
+    _deptCtl.dispose();
+    _passwordCtl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // 🔹 Same top image as student screen
-            SizedBox(
-              height: 250,
-              width: double.infinity,
-              child: Image.network(
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuB-7UIWcImXh-4VEHTrpiFM2e1TPI8pudAoiZGcJTyAAuRnr4a3WzO-bXe8EvskNqDknIQ0EmRE8cbz99EPmGOds3henspBmX_RHip0Rr1yGfWiFPQTJxhsmFCewh7nQ1A7cYlzfHVw9rOnCunlXzGG5gjodeiUNqR4PG0PBOLgRcdvRpccojL7OUnEwbkQLU5mN6mCGw8P-p-msAiTKhvWqxHGt9hyz-r0tyVSpSzShc9ZOEDzsGVPqkYzUYGKmd6fWQVyiv47O2Xh",
-                fit: BoxFit.cover,
+      appBar: AppBar(title: const Text("Faculty Sign Up")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nameCtl,
+                decoration: const InputDecoration(labelText: 'Full name'),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Enter name' : null,
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // 🔹 Form Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Faculty Sign Up",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _emailCtl,
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) => v == null || !v.contains('@') ? 'Enter valid email' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _deptCtl,
+                decoration: const InputDecoration(labelText: 'Department'),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Enter department' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _passwordCtl,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                validator: (v) => v == null || v.length < 6 ? 'Minimum 6 chars' : null,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _signupFaculty,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1173D4),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Create your faculty account to manage your classes and schedules.",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF617589),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Full Name
-                    TextFormField(
-                      controller: _nameController,
-                      decoration:
-                          _inputDecoration("Full Name", Icons.person_outline),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? "Enter your name" : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Email
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration:
-                          _inputDecoration("Email ID", Icons.email_outlined),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Enter your email";
-                        }
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                          return "Enter a valid email address";
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Password
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration:
-                          _inputDecoration("Password", Icons.lock_outline),
-                      validator: (value) => value == null || value.length < 6
-                          ? "Password must be at least 6 characters"
-                          : null,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Register Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Faculty Registered Successfully!"),
-                                backgroundColor: Color(0xFF1173D4),
-                              ),
-                            );
-
-                            // ✅ Navigate to main screen with faculty role
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const MainScreen(role: 'faculty'),
-                              ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1173D4),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          "Register",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                  ],
+                  ),
+                  child: _loading
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator())
+                      : const Text('Sign Up'),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF1173D4)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF1173D4), width: 2),
       ),
     );
   }

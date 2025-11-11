@@ -1,7 +1,8 @@
+// lib/screens/welcome_screen.dart
 import 'package:flutter/material.dart';
 import 'signup_choice_screen.dart';
-import '../main_screen.dart'; // go up one folder to access main_screen.dart
-
+import 'login_screen.dart';
+import '../main.dart'; // change path if needed
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -58,7 +59,11 @@ class WelcomeScreen extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // TODO: Add login screen later
+                    // Go to login screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 48),
@@ -102,7 +107,7 @@ class WelcomeScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            const MainScreen(role: "student"), // ✅ Guest = Student role
+                            const MainScreen(role: "student"), // Guest = Student role
                       ),
                     );
                   },
