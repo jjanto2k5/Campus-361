@@ -1,7 +1,8 @@
 // lib/screens/login_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../main.dart'; // <-- use the same MainScreen as signup
+import '../main.dart'; // MainScreen
+import 'services/local_user.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtl = TextEditingController();
   final _passwordCtl = TextEditingController();
-  String _role = 'student'; // default; you can allow user to pick student/faculty
+  String _role = 'student'; // default role selector
   bool _loading = false;
 
   Future<void> _login() async {
@@ -33,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
           .get();
 
       if (q.docs.isEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid credentials or role.')),
         );
@@ -42,32 +44,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final doc = q.docs.first;
       final userData = doc.data();
-      debugPrint('Login doc id=${doc.id}, data=$userData');
 
-      final role = (userData['role'] as String?) ?? 'student';
+      final role = (userData['role'] as String?) ?? _role;
+      final name = (userData['name'] as String?) ?? (userData['username'] as String?) ?? doc.id;
+      final uid = doc.id;
 
-      // Navigate to the same MainScreen used by signup
+      // Save locally so other screens can read current user (no FirebaseAuth used)
+      final localUser = LocalUser(uid: uid, name: name, role: role);
+      await LocalUserStore.save(localUser);
+
+      // Navigate to MainScreen (pass role so MainScreen chooses faculty/student)
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => MainScreen(
-            role: role,
-          ),
-        ),
+        MaterialPageRoute(builder: (context) => MainScreen(role: role)),
       );
     } on FirebaseException catch (fe) {
       debugPrint('FirebaseException during login: ${fe.code} - ${fe.message}');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: ${fe.message ?? fe.code}')),
       );
     } catch (e, st) {
       debugPrint('Unexpected login error: $e\n$st');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: $e')),
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -122,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _loading ? null : _login,
-                child: _loading ? const CircularProgressIndicator() : const Text('Log In'),
+                child: _loading ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Log In'),
               ),
             ],
           ),
