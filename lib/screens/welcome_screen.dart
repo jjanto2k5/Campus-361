@@ -1,8 +1,9 @@
 // lib/screens/welcome_screen.dart
 import 'package:flutter/material.dart';
+import 'common/campus_map_main.dart';
 import 'signup_choice_screen.dart';
 import 'login_screen.dart';
-import '../main.dart'; // change path if needed
+ // ✅ import your map screen
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -12,7 +13,7 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          // Top image
+          // 🏫 Top image
           SizedBox(
             height: 250,
             width: double.infinity,
@@ -24,7 +25,7 @@ class WelcomeScreen extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Title & Subtitle
+          // ✨ Title & Subtitle
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Column(
@@ -52,17 +53,19 @@ class WelcomeScreen extends StatelessWidget {
 
           const SizedBox(height: 32),
 
-          // Buttons
+          // 🔹 Buttons
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
+                // Login
                 ElevatedButton(
                   onPressed: () {
-                    // Go to login screen
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -78,6 +81,7 @@ class WelcomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
+                // Sign Up
                 ElevatedButton(
                   onPressed: () {
                     Navigator.push(
@@ -101,13 +105,13 @@ class WelcomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
+                // 👣 Continue as Guest → Map
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const MainScreen(role: "student"), // Guest = Student role
+                        builder: (context) => const CampusMapMainScreen(),
                       ),
                     );
                   },
@@ -116,6 +120,7 @@ class WelcomeScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       color: Color(0xFF1173D4),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -125,6 +130,7 @@ class WelcomeScreen extends StatelessWidget {
 
           const Spacer(),
 
+          // 🔸 Footer
           const Padding(
             padding: EdgeInsets.only(bottom: 24),
             child: Text(

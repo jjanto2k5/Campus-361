@@ -18,6 +18,9 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
 
   bool _loading = false;
 
+  // New field for campus dropdown
+  String? _selectedCampus;
+
   Future<void> _registerStudent() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -26,15 +29,18 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
     final name = _usernameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    final campus = _selectedCampus ?? 'Amrita Vishwa Vidyapeetham';
 
-    final usersRef = FirebaseFirestore.instance.collection('users'); // change to 'students' if you prefer separate collection
+    final usersRef = FirebaseFirestore.instance.collection('users');
 
     try {
       // Check duplicate email
-      final existing = await usersRef.where('email', isEqualTo: email).limit(1).get();
+      final existing =
+          await usersRef.where('email', isEqualTo: email).limit(1).get();
       if (existing.docs.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An account with this email already exists')),
+          const SnackBar(
+              content: Text('An account with this email already exists')),
         );
         setState(() => _loading = false);
         return;
@@ -44,8 +50,9 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
       final data = {
         'name': name,
         'email': email,
-        'password': password, // demo only - DON'T store plaintext in prod
+        'password': password, // ⚠️ Only demo purpose
         'role': 'student',
+        'campus': campus,
         'createdAt': FieldValue.serverTimestamp(),
       };
 
@@ -57,11 +64,11 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
         const SnackBar(content: Text('Student Registered Successfully!')),
       );
 
-      // Navigate to MainScreen as student
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainScreen(role: 'student')),
+        MaterialPageRoute(
+            builder: (context) => const MainScreen(role: 'student')),
       );
     } on FirebaseException catch (fe) {
       debugPrint('FirebaseException during signup: ${fe.code} - ${fe.message}');
@@ -112,6 +119,7 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // 🔹 Header Image
             SizedBox(
               height: 250,
               width: double.infinity,
@@ -120,7 +128,10 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
                 fit: BoxFit.cover,
               ),
             ),
+
             const SizedBox(height: 24),
+
+            // 🔹 Form
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Form(
@@ -130,24 +141,25 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
                   children: [
                     const Text(
                       "Student Sign Up",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       "Create your student account to access campus features.",
-                      style: TextStyle(fontSize: 14, color: Color(0xFF617589)),
+                      style:
+                          TextStyle(fontSize: 14, color: Color(0xFF617589)),
                     ),
                     const SizedBox(height: 24),
 
                     // Username
                     TextFormField(
                       controller: _usernameController,
-                      decoration: _inputDecoration("Username", Icons.person_outline),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? "Enter your username" : null,
+                      decoration: _inputDecoration(
+                          "Username", Icons.person_outline),
+                      validator: (value) => value == null || value.isEmpty
+                          ? "Enter your username"
+                          : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -155,9 +167,12 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: _inputDecoration("Email ID", Icons.email_outlined),
+                      decoration: _inputDecoration(
+                          "Email ID", Icons.email_outlined),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "Enter your email";
+                        if (value == null || value.isEmpty) {
+                          return "Enter your email";
+                        }
                         if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                           return "Enter a valid email";
                         }
@@ -170,13 +185,41 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
-                      decoration: _inputDecoration("Password", Icons.lock_outline),
+                      decoration: _inputDecoration(
+                          "Password", Icons.lock_outline),
+                      validator: (value) => value == null || value.length < 6
+                          ? "Password too short"
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 🔽 Campus Dropdown
+                    DropdownButtonFormField<String>(
+                      value: _selectedCampus,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.school_outlined),
+                        labelText: 'Campus Name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              const BorderSide(color: Color(0xFF1173D4)),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Amrita Vishwa Vidyapeetham',
+                          child: Text('Amrita Vishwa Vidyapeetham'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() => _selectedCampus = value);
+                      },
                       validator: (value) =>
-                          value == null || value.length < 6 ? "Password too short" : null,
+                          value == null ? "Please select your campus" : null,
                     ),
                     const SizedBox(height: 28),
 
-                    // Register Button
+                    // 🔹 Register Button
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -190,10 +233,17 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
                           ),
                         ),
                         child: _loading
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator())
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2),
+                              )
                             : const Text(
                                 "Register",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
                               ),
                       ),
                     ),

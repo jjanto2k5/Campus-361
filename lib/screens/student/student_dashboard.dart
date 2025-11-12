@@ -1,5 +1,9 @@
+import 'package:campusapp/screens/common/events.dart';
+import 'package:campusapp/screens/faculty/batch_search.dart';
+import 'package:campusapp/screens/faculty/faculty_search.dart';
 import 'package:flutter/material.dart';
-import 'student_timetable.dart'; // ✅ Import timetable screen
+import 'student_timetable.dart';
+ // ✅ Import timetable screen
 
 class StudentDashboardScreen extends StatelessWidget {
   const StudentDashboardScreen({Key? key}) : super(key: key);
@@ -47,6 +51,7 @@ class StudentDashboardScreen extends StatelessWidget {
 
               const SizedBox(height: 6),
               Text(
+                
                 'Welcome, Student 👋',
                 style: TextStyle(
                   fontSize: 16,
@@ -65,21 +70,21 @@ class StudentDashboardScreen extends StatelessWidget {
                   childAspectRatio: 1.1,
                   children: [
                     // 🕓 My Timetable
-                    _buildDashboardTile(
-                      context,
-                      icon: Icons.access_time,
-                      title: 'My Timetable',
-                      color: Colors.blue.shade100,
-                      iconColor: Colors.blue.shade700,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const StudentTimetableScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                    // _buildDashboardTile(
+                    //   context,
+                    //   icon: Icons.access_time,
+                    //   title: 'My Timetable',
+                    //   color: Colors.blue.shade100,
+                    //   iconColor: Colors.blue.shade700,
+                    //   onTap: () {
+                    //     Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (context) => const StudentTimetableScreen(),
+                    //       ),
+                    //     );
+                    //   },
+                    // ),
 
                     // 👨‍🏫 Faculty Timetable
                     _buildDashboardTile(
@@ -89,12 +94,8 @@ class StudentDashboardScreen extends StatelessWidget {
                       color: Colors.orange.shade100,
                       iconColor: Colors.orange.shade700,
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Faculty timetable feature coming soon!'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
+                        Navigator.push(context,MaterialPageRoute(builder:(c) => const FacultySearchPage()));
+                        
                       },
                     ),
 
@@ -106,12 +107,9 @@ class StudentDashboardScreen extends StatelessWidget {
                       color: Colors.purple.shade100,
                       iconColor: Colors.purple.shade700,
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Batch timetable feature coming soon!'),
-                            backgroundColor: Colors.purple,
-                          ),
-                        );
+                        Navigator.push(context,MaterialPageRoute(builder:(c) => const BatchSearchPage() ));
+                        
+                        
                       },
                     ),
 
@@ -119,17 +117,16 @@ class StudentDashboardScreen extends StatelessWidget {
                     _buildDashboardTile(
                       context,
                       icon: Icons.settings,
-                      title: 'Settings',
-                      color: Colors.green.shade100,
-                      iconColor: Colors.green.shade700,
+                      title: 'Events',
+                      color: Colors.teal.shade100,
+                      iconColor: Colors.teal.shade700,
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Settings page coming soon!'),
-                            backgroundColor: Colors.green,
-                          ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const EventsPage()),
                         );
                       },
+                        
                     ),
                   ],
                 ),

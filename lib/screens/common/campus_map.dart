@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' show Canvas, Paint, PathMetrics, Tangent;
+import 'dart:math' as math;
 
 class CampusMapScreen extends StatefulWidget {
   final String destinationRoom;
@@ -201,43 +202,133 @@ class _MapPainter extends CustomPainter {
     if (start != null &&
         roomPositions[start] != null &&
         roomPositions[end] != null) {
-      final startPos = roomPositions[start]!;
-      final endPos = roomPositions[end]!;
-
-      final path = Path();
-
+      // Build a small graph representing walkable connections.
+      // Nodes: rooms + central junction `VC` at (midX, 0.55).
       final midX = width * 0.5;
-      final midYStart = startPos.dy * height;
-      final midYEnd = endPos.dy * height;
+      final vcKey = '__VC__';
 
-      // Connect with clean vertical hallway transitions
-      path.moveTo(startPos.dx * width, startPos.dy * height);
-      path.lineTo(midX, midYStart);
-      path.lineTo(midX, midYEnd);
-      path.lineTo(endPos.dx * width, endPos.dy * height);
+      // Helper to convert normalized offsets to absolute positions
+      Offset toAbs(Offset o) => Offset(o.dx * width, o.dy * height);
 
-      // Animate path reveal
-      final PathMetrics metrics = path.computeMetrics();
-      for (final metric in metrics) {
-        final extractPath = metric.extractPath(
-          0,
-          metric.length * progress,
-        );
-        canvas.drawPath(extractPath, pathPaint);
+      // Build positions map including VC
+      final Map<String, Offset> positions = {}..addAll(roomPositions);
+      positions[vcKey] = Offset(midX / width, 0.55); // normalized
+
+      // Build adjacency: Map<node, Map<neighbor, weight>>
+      Map<String, Map<String, double>> adj = {};
+      for (final a in positions.keys) {
+        adj[a] = {};
       }
 
-      // Markers
-      canvas.drawCircle(
-        Offset(startPos.dx * width, startPos.dy * height),
-        8,
-        Paint()..color = Colors.green,
-      );
-      canvas.drawCircle(
-        Offset(endPos.dx * width, endPos.dy * height),
-        8,
-        Paint()..color = Colors.red,
-      );
+      // Connect rooms that lie on the same horizontal hallway (y roughly equal)
+      const double sameRowEps = 0.02;
+      final keys = positions.keys.toList();
+      for (int i = 0; i < keys.length; i++) {
+        for (int j = i + 1; j < keys.length; j++) {
+          final ka = keys[i];
+          final kb = keys[j];
+          final pa = toAbs(positions[ka]!);
+          final pb = toAbs(positions[kb]!);
+          final dy = (pa.dy - pb.dy).abs() / height;
+          final dist = (pa - pb).distance;
+
+          // If both are rooms and on same visual row, allow direct edge
+          if (ka != vcKey && kb != vcKey && dy < sameRowEps) {
+            adj[ka]![kb] = dist;
+            adj[kb]![ka] = dist;
+          }
+        }
+      }
+
+      // Connect every room to VC (vertical hub) with weight = euclidean distance
+      for (final k in roomPositions.keys) {
+        final pa = toAbs(roomPositions[k]!);
+        final pvc = Offset(midX, pa.dy);
+        final distToVc = (pa - pvc).distance;
+        // connect room to virtual projection node (VC at same Y)
+        adj[k]![vcKey] = distToVc;
+        adj[vcKey]![k] = distToVc;
+      }
+
+      // Run Dijkstra on this small graph
+      List<String>? shortest = _dijkstra(adj, start!, end);
+
+      if (shortest != null && shortest.length >= 2) {
+        final path = Path();
+        for (int i = 0; i < shortest.length; i++) {
+          final node = shortest[i];
+          final pos = node == vcKey
+              ? Offset(midX, 0.55 * height)
+              : toAbs(roomPositions[node]!);
+          if (i == 0) path.moveTo(pos.dx, pos.dy);
+          else path.lineTo(pos.dx, pos.dy);
+        }
+
+        // Animate path reveal
+        final PathMetrics metrics = path.computeMetrics();
+        for (final metric in metrics) {
+          final extractPath = metric.extractPath(0, metric.length * progress);
+          canvas.drawPath(extractPath, pathPaint);
+        }
+
+        // Markers
+        final startPos = toAbs(roomPositions[start]!);
+        final endPos = toAbs(roomPositions[end]!);
+        canvas.drawCircle(startPos, 8, Paint()..color = Colors.green);
+        canvas.drawCircle(endPos, 8, Paint()..color = Colors.red);
+      }
     }
+  }
+
+  // Simple Dijkstra implementation for small graphs
+  List<String>? _dijkstra(Map<String, Map<String, double>> adj, String src, String dst) {
+    final nodes = adj.keys.toList();
+    final dist = <String, double>{};
+    final prev = <String, String?>{};
+    final unvisited = <String>{}..addAll(nodes);
+
+    for (final n in nodes) {
+      dist[n] = double.infinity;
+      prev[n] = null;
+    }
+    dist[src] = 0;
+
+    while (unvisited.isNotEmpty) {
+      // pick node with smallest dist
+      String? u;
+      double best = double.infinity;
+      for (final n in unvisited) {
+        final d = dist[n]!;
+        if (d < best) {
+          best = d;
+          u = n;
+        }
+      }
+      if (u == null) break;
+      if (u == dst) break;
+      unvisited.remove(u);
+
+      final neighbors = adj[u]!;
+      for (final v in neighbors.keys) {
+        if (!unvisited.contains(v)) continue;
+        final alt = dist[u]! + neighbors[v]!;
+        if (alt < dist[v]!) {
+          dist[v] = alt;
+          prev[v] = u;
+        }
+      }
+    }
+
+    if (dist[dst] == double.infinity) return null;
+
+    // reconstruct path
+    final path = <String>[];
+    String? cur = dst;
+    while (cur != null) {
+      path.insert(0, cur);
+      cur = prev[cur];
+    }
+    return path;
   }
 
   @override

@@ -86,9 +86,9 @@ class _MainScreenState extends State<MainScreen> {
           : const StudentDashboardScreen(),
 
       // 📅 Timetable
-      userRole == 'faculty'
-          ? const TimetableScreen() // add const if TimetableScreen has const constructor
-          : const StudentTimetableScreen(),
+      // userRole == 'faculty'
+      //     ? const TimetableScreen() // add const if TimetableScreen has const constructor
+      //     : const StudentTimetableScreen(),
 
       // 🚨 SOS
       SOSScreen(role: userRole),
@@ -128,7 +128,7 @@ class _MainScreenState extends State<MainScreen> {
             tabs: const [
               GButton(icon: Icons.map_outlined, text: 'Map'),
               GButton(icon: Icons.home_filled, text: 'Home'),
-              GButton(icon: Icons.calendar_today, text: 'Timetable'),
+              // GButton(icon: Icons.calendar_today, text: 'Timetable'),
               GButton(icon: Icons.sos_outlined, text: 'SOS'),
             ],
           ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' show Canvas, Paint, PathMetrics;
+import '../welcome_screen.dart';
+
 
 class CampusMapMainScreen extends StatefulWidget {
-  final String? startRoom; // 👈 optional when coming from Map tab
-  final String? destinationRoom; // 👈 required when coming from timetable
+  final String? startRoom;
+  final String? destinationRoom;
 
   const CampusMapMainScreen({
     Key? key,
@@ -19,7 +21,7 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
     with SingleTickerProviderStateMixin {
   String? startRoom;
   String? endRoom;
-  bool isPanelExpanded = true; // for the dropdown panel
+  bool isPanelExpanded = true;
   late AnimationController _controller;
 
   final Map<String, Offset> roomPositions = {
@@ -39,11 +41,9 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
       duration: const Duration(seconds: 2),
     );
 
-    // Auto-assign rooms when navigated from timetable
     startRoom = widget.startRoom;
     endRoom = widget.destinationRoom;
 
-    // If both are provided, start path animation
     if (startRoom != null && endRoom != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _controller.forward(from: 0);
@@ -75,10 +75,23 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
         title: const Text('Campus Map'),
         foregroundColor: Colors.black,
         elevation: 2,
+
+        // 👇 Add this back button
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+            );
+          },
+        ),
       ),
+
+      // === Map Body ===
       body: Stack(
         children: [
-          // === Map Background ===
+          // Map layout and animations (same as before)
           LayoutBuilder(
             builder: (context, constraints) {
               return AnimatedBuilder(
@@ -100,7 +113,7 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
             },
           ),
 
-          // === Sliding Search Panel ===
+          // === Bottom Sliding Panel ===
           AnimatedPositioned(
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeInOut,
@@ -137,7 +150,7 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
                       ),
                     ),
 
-                    // Collapsed view (when panel is hidden)
+                    // Collapsed view
                     if (!isPanelExpanded)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -152,7 +165,7 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
                         ],
                       ),
 
-                    // Expanded panel for manual selection
+                    // Expanded view
                     if (isPanelExpanded) ...[
                       Row(
                         children: [
@@ -243,7 +256,7 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
   }
 }
 
-// === MAP PAINTER ===
+// === Map Painter (unchanged) ===
 class _MapPainter extends CustomPainter {
   final Map<String, Offset> roomPositions;
   final String? start;
@@ -293,7 +306,7 @@ class _MapPainter extends CustomPainter {
     layout.lineTo(width * 0.8, height * 0.55);
     canvas.drawPath(layout, hallPaint);
 
-    // Draw rooms
+    // Rooms
     roomPositions.forEach((room, offset) {
       final rect = Rect.fromCenter(
         center: Offset(offset.dx * width, offset.dy * height),
@@ -317,7 +330,7 @@ class _MapPainter extends CustomPainter {
       );
     });
 
-    // Path drawing
+    // Path animation
     if (start != null && end != null) {
       final s = roomPositions[start]!;
       final e = roomPositions[end]!;
@@ -334,11 +347,11 @@ class _MapPainter extends CustomPainter {
         canvas.drawPath(segment, pathPaint);
       }
 
-      // Draw start (green) and end (red)
-      canvas.drawCircle(Offset(s.dx * width, s.dy * height), 8,
-          Paint()..color = Colors.green);
-      canvas.drawCircle(Offset(e.dx * width, e.dy * height), 8,
-          Paint()..color = Colors.red);
+      // Start (green) and End (red)
+      canvas.drawCircle(
+          Offset(s.dx * width, s.dy * height), 8, Paint()..color = Colors.green);
+      canvas.drawCircle(
+          Offset(e.dx * width, e.dy * height), 8, Paint()..color = Colors.red);
     }
   }
 

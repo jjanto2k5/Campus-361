@@ -1,7 +1,7 @@
-// lib/screens/faculty_signup.dart
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../main.dart'; // for MainScreen navigation
+import 'package:flutter/material.dart';
+
+import '../main.dart';
 
 class FacultySignUpScreen extends StatefulWidget {
   const FacultySignUpScreen({super.key});
@@ -16,60 +16,46 @@ class _FacultySignUpScreenState extends State<FacultySignUpScreen> {
   final _emailCtl = TextEditingController();
   final _deptCtl = TextEditingController();
   final _passwordCtl = TextEditingController();
+  String? _selectedCampus;
   bool _loading = false;
 
-  Future<void> _signupFaculty() async {
+  Future<void> _registerFaculty() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _loading = true);
-
-    final users = FirebaseFirestore.instance.collection('users'); // use 'faculty' if you want a separate collection
-
     try {
-      final email = _emailCtl.text.trim();
-      // check duplicate email
-      final existing = await users.where('email', isEqualTo: email).limit(1).get();
-      if (existing.docs.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An account with that email already exists.')),
-        );
-        setState(() => _loading = false);
-        return;
-      }
-
-      final doc = {
+      await FirebaseFirestore.instance.collection('users').add({
         'name': _nameCtl.text.trim(),
-        'email': email,
+        'email': _emailCtl.text.trim(),
         'department': _deptCtl.text.trim(),
-        'password': _passwordCtl.text, // demo only - don't store plaintext in prod
+        'password': _passwordCtl.text,
         'role': 'faculty',
-        'createdAt': FieldValue.serverTimestamp(),
-      };
+        'campus': _selectedCampus ?? 'Amrita Vishwa Vidyapeetham',
+        'createdAt': Timestamp.now(),
+      });
 
-      final docRef = await users.add(doc);
-      debugPrint('Faculty added with id: ${docRef.id}');
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Faculty registered successfully')),
+        const SnackBar(content: Text('Faculty registered successfully!')),
       );
-
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainScreen(role: 'faculty')),
+        MaterialPageRoute(
+            builder: (context) => const MainScreen(role: 'faculty')),
       );
-    } on FirebaseException catch (fe) {
-      debugPrint('FirebaseException during faculty signup: ${fe.code} - ${fe.message}');
-      final msg = fe.code == 'permission-denied'
-          ? 'Firestore permission denied. Check your Firestore rules.'
-          : 'Signup failed: ${fe.message ?? fe.code}';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-    } catch (e, st) {
-      debugPrint('Unexpected error during signup: $e\n$st');
+    } on FirebaseException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Signup failed: $e')),
+        SnackBar(content: Text('Error: ${e.message}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unexpected error: $e')),
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -85,54 +71,192 @@ class _FacultySignUpScreenState extends State<FacultySignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Faculty Sign Up")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
             children: [
-              TextFormField(
-                controller: _nameCtl,
-                decoration: const InputDecoration(labelText: 'Full name'),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Enter name' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailCtl,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) => v == null || !v.contains('@') ? 'Enter valid email' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _deptCtl,
-                decoration: const InputDecoration(labelText: 'Department'),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Enter department' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordCtl,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: (v) => v == null || v.length < 6 ? 'Minimum 6 chars' : null,
-              ),
-              const SizedBox(height: 20),
+              // Header image (same as student signup)
               SizedBox(
+                height: 230,
                 width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _signupFaculty,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1173D4),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                child: Image.network(
+                  "https://lh3.googleusercontent.com/aida-public/AB6AXuB-7UIWcImXh-4VEHTrpiFM2e1TPI8pudAoiZGcJTyAAuRnr4a3WzO-bXe8EvskNqDknIQ0EmRE8cbz99EPmGOds3henspBmX_RHip0Rr1yGfWiFPQTJxhsmFCewh7nQ1A7cYlzfHVw9rOnCunlXzGG5gjodeiUNqR4PG0PBOLgRcdvRpccojL7OUnEwbkQLU5mN6mCGw8P-p-msAiTKhvWqxHGt9hyz-r0tyVSpSzShc9ZOEDzsGVPqkYzUYGKmd6fWQVyiv47O2Xh",
+                  fit: BoxFit.cover,
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Faculty Sign Up',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Create your faculty account to access Campus361 features.',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Full Name
+                      TextFormField(
+                        controller: _nameCtl,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.person_outline),
+                          hintText: 'Full Name',
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue.shade200),
+                          ),
+                        ),
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Enter your name' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email
+                      TextFormField(
+                        controller: _emailCtl,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          hintText: 'Email ID',
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue.shade200),
+                          ),
+                        ),
+                        validator: (v) =>
+                            v == null || !v.contains('@') ? 'Enter valid email' : null,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Department
+                      TextFormField(
+                        controller: _deptCtl,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.account_tree_outlined),
+                          hintText: 'Department',
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue.shade200),
+                          ),
+                        ),
+                        validator: (v) => v == null || v.isEmpty
+                            ? 'Enter your department'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password
+                      TextFormField(
+                        controller: _passwordCtl,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          hintText: 'Password',
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue.shade200),
+                          ),
+                        ),
+                        validator: (v) => v == null || v.length < 6
+                            ? 'Minimum 6 characters'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 🔽 Campus Dropdown
+                      DropdownButtonFormField<String>(
+                        value: _selectedCampus,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.school_outlined),
+                          labelText: 'Campus Name',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: Color(0xFF1173D4)),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Amrita Vishwa Vidyapeetham',
+                            child: Text('Amrita Vishwa Vidyapeetham'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() => _selectedCampus = value);
+                        },
+                        validator: (value) =>
+                            value == null ? "Please select your campus" : null,
+                      ),
+                      const SizedBox(height: 26),
+
+                      // Sign Up Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: _loading ? null : _registerFaculty,
+                          child: _loading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Sign Up',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Center(
+                        child: Text(
+                          'Campus361 © 2025',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: _loading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator())
-                      : const Text('Sign Up'),
                 ),
               ),
             ],
