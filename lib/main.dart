@@ -18,7 +18,6 @@ import 'screens/student/student_timetable.dart';
 // Common Screens
 import 'screens/common/sos.dart';
 import 'screens/common/campus_map_main.dart'; // ✅ the polished version
-import 'screens/common/campus_map.dart'; // optional older version if still used
 
 // Welcome Flow
 import 'screens/welcome_screen.dart';
