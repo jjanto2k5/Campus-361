@@ -56,9 +56,10 @@ class _LoginScreenState extends State<LoginScreen> {
       await LocalUserStore.save(localUser);
 
       if (!mounted) return;
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => MainScreen(role: role)),
+        (route) => false,
       );
     } on FirebaseException catch (fe) {
       if (!mounted) return;

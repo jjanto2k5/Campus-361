@@ -4,6 +4,7 @@ import 'change_status.dart';
 import 'edit_timetable.dart';
 import 'faculty_search.dart';
 import 'batch_search.dart';
+import '../welcome_screen.dart';
 
 class DashboardFacultyScreen extends StatelessWidget {
   const DashboardFacultyScreen({Key? key}) : super(key: key);
@@ -12,6 +13,28 @@ class DashboardFacultyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.blue,
+        title: const Text(
+          'Faculty Dashboard',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 2,
+        leading: IconButton(
+          icon: const Icon(Icons.logout, color: Colors.white),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+              (route) => false,
+            );
+          },
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),

@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' show Canvas, Paint, PathMetrics;
+import 'dart:collection';
+import 'dart:math';
 import '../welcome_screen.dart';
 
 
 class CampusMapMainScreen extends StatefulWidget {
   final String? startRoom;
   final String? destinationRoom;
+  final bool fromGuest;
+  final VoidCallback? onBackToHome;
+
 
   const CampusMapMainScreen({
     Key? key,
     this.startRoom,
     this.destinationRoom,
+    this.fromGuest = false,
+    this.onBackToHome,
   }) : super(key: key);
 
   @override
@@ -76,14 +83,21 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
         foregroundColor: Colors.black,
         elevation: 2,
 
-        // 👇 Add this back button
+        //Back Button
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-            );
+            if (widget.fromGuest) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+              );
+            } else {
+              if (widget.onBackToHome != null) {
+                widget.onBackToHome!();
+              }
+              Navigator.pop(context);
+            }
           },
         ),
       ),
@@ -91,7 +105,7 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
       // === Map Body ===
       body: Stack(
         children: [
-          // Map layout and animations (same as before)
+          // Map layout and animations 
           LayoutBuilder(
             builder: (context, constraints) {
               return AnimatedBuilder(
@@ -256,6 +270,146 @@ class _CampusMapMainScreenState extends State<CampusMapMainScreen>
   }
 }
 
+// === Graph & Dijkstra Implementation ===
+class GraphNode {
+  final String id;
+  final Offset position;
+  final Map<String, double> neighbors; // neighborId -> distance
+
+  GraphNode(this.id, this.position) : neighbors = {};
+}
+
+class CampusGraph {
+  final Map<String, GraphNode> nodes = {};
+
+  void addNode(String id, Offset position) {
+    nodes[id] = GraphNode(id, position);
+  }
+
+  void addEdge(String from, String to) {
+    if (nodes.containsKey(from) && nodes.containsKey(to)) {
+      final distance = _calculateDistance(nodes[from]!.position, nodes[to]!.position);
+      nodes[from]!.neighbors[to] = distance;
+      nodes[to]!.neighbors[from] = distance; // bidirectional
+    }
+  }
+
+  double _calculateDistance(Offset a, Offset b) {
+    return sqrt(pow(a.dx - b.dx, 2) + pow(a.dy - b.dy, 2));
+  }
+
+  List<String> dijkstra(String start, String end) {
+    if (!nodes.containsKey(start) || !nodes.containsKey(end)) {
+      return [];
+    }
+
+    final distances = <String, double>{};
+    final previous = <String, String?>{};
+    final unvisited = <String>{};
+
+    // Initialize
+    for (final nodeId in nodes.keys) {
+      distances[nodeId] = double.infinity;
+      previous[nodeId] = null;
+      unvisited.add(nodeId);
+    }
+    distances[start] = 0;
+
+    while (unvisited.isNotEmpty) {
+      // Find node with minimum distance
+      String? current;
+      double minDist = double.infinity;
+      for (final nodeId in unvisited) {
+        if (distances[nodeId]! < minDist) {
+          minDist = distances[nodeId]!;
+          current = nodeId;
+        }
+      }
+
+      if (current == null || current == end) break;
+      unvisited.remove(current);
+
+      // Update distances to neighbors
+      for (final neighbor in nodes[current]!.neighbors.keys) {
+        if (!unvisited.contains(neighbor)) continue;
+        
+        final alt = distances[current]! + nodes[current]!.neighbors[neighbor]!;
+        if (alt < distances[neighbor]!) {
+          distances[neighbor] = alt;
+          previous[neighbor] = current;
+        }
+      }
+    }
+
+    // Reconstruct path
+    final path = <String>[];
+    String? current = end;
+    while (current != null) {
+      path.insert(0, current);
+      current = previous[current];
+    }
+
+    return path.isEmpty || path.first != start ? [] : path;
+  }
+
+  List<Offset> getPathPositions(List<String> nodeIds) {
+    return nodeIds.map((id) => nodes[id]!.position).toList();
+  }
+}
+
+CampusGraph buildCampusGraph() {
+  final graph = CampusGraph();
+
+  // Define hallway nodes
+  graph.addNode('top', const Offset(0.5, 0.1));
+  graph.addNode('upper', const Offset(0.5, 0.25));
+  graph.addNode('center', const Offset(0.5, 0.55));
+  graph.addNode('lower', const Offset(0.5, 0.85));
+  graph.addNode('left', const Offset(0.2, 0.55));
+  graph.addNode('right', const Offset(0.8, 0.55));
+
+  // Define room entrance nodes
+  graph.addNode('S101_entrance', const Offset(0.5, 0.85));
+  graph.addNode('S102_entrance', const Offset(0.5, 0.85));
+  graph.addNode('S103_entrance', const Offset(0.2, 0.55));
+  graph.addNode('S104_entrance', const Offset(0.8, 0.55));
+  graph.addNode('S105_entrance', const Offset(0.5, 0.25));
+  graph.addNode('S106_entrance', const Offset(0.5, 0.25));
+
+  // Define room nodes
+  graph.addNode('S101', const Offset(0.35, 0.85));
+  graph.addNode('S102', const Offset(0.65, 0.85));
+  graph.addNode('S103', const Offset(0.25, 0.55));
+  graph.addNode('S104', const Offset(0.75, 0.55));
+  graph.addNode('S105', const Offset(0.25, 0.25));
+  graph.addNode('S106', const Offset(0.75, 0.25));
+
+  // Connect hallway nodes (main corridors)
+  graph.addEdge('top', 'upper');
+  graph.addEdge('upper', 'center');
+  graph.addEdge('center', 'lower');
+  graph.addEdge('left', 'center');
+  graph.addEdge('center', 'right');
+
+  // Connect rooms to their entrance nodes
+  graph.addEdge('S101', 'S101_entrance');
+  graph.addEdge('S102', 'S102_entrance');
+  graph.addEdge('S103', 'S103_entrance');
+  graph.addEdge('S104', 'S104_entrance');
+  graph.addEdge('S105', 'S105_entrance');
+  graph.addEdge('S106', 'S106_entrance');
+
+  // Connect entrance nodes to hallway nodes
+  graph.addEdge('S101_entrance', 'lower');
+  graph.addEdge('S102_entrance', 'lower');
+  graph.addEdge('S103_entrance', 'left');
+  graph.addEdge('S104_entrance', 'right');
+  graph.addEdge('S105_entrance', 'upper');
+  graph.addEdge('S106_entrance', 'upper');
+
+  return graph;
+}
+
 // === Map Painter (unchanged) ===
 class _MapPainter extends CustomPainter {
   final Map<String, Offset> roomPositions;
@@ -330,28 +484,35 @@ class _MapPainter extends CustomPainter {
       );
     });
 
-    // Path animation
+    // Path animation using Dijkstra's algorithm
     if (start != null && end != null) {
-      final s = roomPositions[start]!;
-      final e = roomPositions[end]!;
+      final graph = buildCampusGraph();
+      final pathNodes = graph.dijkstra(start!, end!);
+      
+      if (pathNodes.isNotEmpty) {
+        final pathPositions = graph.getPathPositions(pathNodes);
+        
+        // Build path from positions
+        final path = Path();
+        path.moveTo(pathPositions[0].dx * width, pathPositions[0].dy * height);
+        for (int i = 1; i < pathPositions.length; i++) {
+          path.lineTo(pathPositions[i].dx * width, pathPositions[i].dy * height);
+        }
 
-      final path = Path()
-        ..moveTo(s.dx * width, s.dy * height)
-        ..lineTo(width * 0.5, s.dy * height)
-        ..lineTo(width * 0.5, e.dy * height)
-        ..lineTo(e.dx * width, e.dy * height);
+        final PathMetrics metrics = path.computeMetrics();
+        for (final metric in metrics) {
+          final segment = metric.extractPath(0, metric.length * progress);
+          canvas.drawPath(segment, pathPaint);
+        }
 
-      final PathMetrics metrics = path.computeMetrics();
-      for (final metric in metrics) {
-        final segment = metric.extractPath(0, metric.length * progress);
-        canvas.drawPath(segment, pathPaint);
+        // Start (green) and End (red) markers
+        final s = pathPositions.first;
+        final e = pathPositions.last;
+        canvas.drawCircle(
+            Offset(s.dx * width, s.dy * height), 8, Paint()..color = Colors.green);
+        canvas.drawCircle(
+            Offset(e.dx * width, e.dy * height), 8, Paint()..color = Colors.red);
       }
-
-      // Start (green) and End (red)
-      canvas.drawCircle(
-          Offset(s.dx * width, s.dy * height), 8, Paint()..color = Colors.green);
-      canvas.drawCircle(
-          Offset(e.dx * width, e.dy * height), 8, Paint()..color = Colors.red);
     }
   }
 

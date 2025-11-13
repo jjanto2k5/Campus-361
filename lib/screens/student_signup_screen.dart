@@ -65,10 +65,11 @@ class _StudentSignUpScreenState extends State<StudentSignUpScreen> {
       );
 
       if (!mounted) return;
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
             builder: (context) => const MainScreen(role: 'student')),
+        (route) => false,
       );
     } on FirebaseException catch (fe) {
       debugPrint('FirebaseException during signup: ${fe.code} - ${fe.message}');

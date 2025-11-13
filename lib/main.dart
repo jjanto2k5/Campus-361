@@ -78,7 +78,13 @@ class _MainScreenState extends State<MainScreen> {
     // Define tabs for both roles
     _widgetOptions = [
       // 🗺️ Map
-      const MapTab(),
+      MapTab(
+        role: userRole, 
+        onNavigateToHome: () {
+          setState(() => _selectedIndex = 1);
+        },
+      ),
+
 
       // 🏠 Home
       userRole == 'faculty'
@@ -140,7 +146,9 @@ class _MainScreenState extends State<MainScreen> {
 
 /// 🗺️ Separate Map Tab Widget for cleaner structure
 class MapTab extends StatefulWidget {
-  const MapTab({super.key});
+  final String role;
+  final VoidCallback onNavigateToHome;
+  const MapTab({super.key, required this.role, required this.onNavigateToHome});
 
   @override
   State<MapTab> createState() => _MapTabState();
@@ -158,6 +166,8 @@ class _MapTabState extends State<MapTab> {
           builder: (context) => CampusMapMainScreen(
             startRoom: selectedStart!,
             destinationRoom: selectedDestination!,
+            fromGuest: false,
+            onBackToHome: widget.onNavigateToHome,
           ),
         ),
       );

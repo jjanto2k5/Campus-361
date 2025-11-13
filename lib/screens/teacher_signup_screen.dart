@@ -39,10 +39,11 @@ class _FacultySignUpScreenState extends State<FacultySignUpScreen> {
         const SnackBar(content: Text('Faculty registered successfully!')),
       );
       if (!mounted) return;
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
             builder: (context) => const MainScreen(role: 'faculty')),
+        (route) => false,
       );
     } on FirebaseException catch (e) {
       if (!mounted) return;

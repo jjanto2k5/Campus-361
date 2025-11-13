@@ -3,6 +3,7 @@ import 'package:campusapp/screens/faculty/batch_search.dart';
 import 'package:campusapp/screens/faculty/faculty_search.dart';
 import 'package:flutter/material.dart';
 import 'student_timetable.dart';
+import '../welcome_screen.dart';
  // ✅ Import timetable screen
 
 class StudentDashboardScreen extends StatelessWidget {
@@ -24,6 +25,16 @@ class StudentDashboardScreen extends StatelessWidget {
         ),
         centerTitle: true,
         elevation: 2,
+        leading: IconButton(
+          icon: const Icon(Icons.logout, color: Colors.white),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+              (route) => false,
+            );
+          },
+        ),
       ),
       body: SafeArea(
         child: Padding(

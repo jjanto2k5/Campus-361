@@ -108,10 +108,12 @@ class WelcomeScreen extends StatelessWidget {
                 // 👣 Continue as Guest → Map
                 TextButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const CampusMapMainScreen(),
+                        builder: (context) => const CampusMapMainScreen(
+                          fromGuest: true,
+                        ),
                       ),
                     );
                   },
